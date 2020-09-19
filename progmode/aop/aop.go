@@ -1,61 +1,86 @@
-// 函数原型
-// 函数声明
-// 函数定义
-// 函数代理
-// 代理获得
-// 函数使用
+package aop
 
-// 函数原型
-// 	func (string,string) bool
-// 函数声明
-// 	func login(name ,password string ) bool
-// 函数定义
-// 	func login(name ,password string ) bool{ return name == "" && password == ""}
-// 函数代理
-// 	aop.proxy(func (string,string) bool,login,"func_id",joinpointer...)
-// 代理获得
-// 	function = aop.get("func_id)
-// 函数使用
-// 	flag = function("hello","world")
+import (
+	"reflect"
+	"runtime"
+)
 
-// Step 1: Define Beans factory
-// beanFactory := aop.NewClassicBeanFactory()
-// beanFactory.RegisterBean("auth", new(Auth))
-
-// Step 2: Define Aspect
-// aspect := aop.NewAspect("aspect_1", "auth")
-// aspect.SetBeanFactory(beanFactory)
-
-// Step 3: Define Pointcut
-// pointcut := aop.NewPointcut("pointcut_1").Execution(`Login()`)
-// aspect.AddPointcut(pointcut)
-
-// Step 4: Add Advice
-// aspect.AddAdvice(&aop.Advice{Ordering: aop.Before, Method: "Before", PointcutRefID: "pointcut_1"})
-// aspect.AddAdvice(&aop.Advice{Ordering: aop.After, Method: "After", PointcutRefID: "pointcut_1"})
-// aspect.AddAdvice(&aop.Advice{Ordering: aop.Around, Method: "Around", PointcutRefID: "pointcut_1"})
-
-// Step 5: Create AOP
-// gogapAop := aop.NewAOP()
-// gogapAop.SetBeanFactory(beanFactory)
-// gogapAop.AddAspect(aspect)
-
-// Setp 6: Get Proxy
-// proxy, err := gogapAop.GetProxy("auth")
-
-// Last Step: Enjoy
-// login := proxy.Method(new(Auth).Login).(func(string, string) bool)("zeal", "gogap")
-// fmt.Println("login result:", login)
-
-
-type Joinpointer struct {
+// Joinpointer 连接点
+type Joinpointer interface {
+	Name() string
+	Inputs() []reflect.Value
+	Outputs() []reflect.Value
+	Invoke() []reflect.Value
+	Context() interface{}
+	SetContext(ctx interface{})
 }
-type Pointcut interface {
-	BeforeAdvice(jp *joinpointer)
-	AfterAdvice(jp *joinpointer)
-	AroundAdvice(jp *joinpointer) interface{}...
+type joinpointerImpl struct {
+	name     string
+	inputs   []reflect.Value
+	outputs  []reflect.Value
+	function reflect.Value
+	context  interface{}
 }
 
-func ProxyFunc(function interface{}, pc Pointcut) {
+func (jpi *joinpointerImpl) Name() string {
+	return jpi.name
+}
+func (jpi *joinpointerImpl) Inputs() []reflect.Value {
+	return jpi.inputs
+}
+func (jpi *joinpointerImpl) Invoke() []reflect.Value {
+	outputs := jpi.function.Call(jpi.inputs)
+	jpi.outputs = outputs
+	return outputs
+}
+func (jpi *joinpointerImpl) Outputs() []reflect.Value {
+	return jpi.outputs
+}
+func (jpi *joinpointerImpl) Context() interface{} {
+	return jpi.context
+}
+func (jpi *joinpointerImpl) SetContext(ctx interface{}) {
+	jpi.context = ctx
+}
 
+type BeforeAdvice func(jp Joinpointer)
+type AfterAdvice func(jp Joinpointer)
+type AroundAdvice func(jp Joinpointer) []reflect.Value
+
+// CreateProxyFunc 创建一个proxy
+func CreateProxyFunc(function interface{}, before BeforeAdvice, after AfterAdvice, around AroundAdvice) interface{} {
+
+	proxyDef := func(inputs []reflect.Value) []reflect.Value {
+
+		rawFunc := reflect.ValueOf(function)
+		funcName := runtime.FuncForPC(rawFunc.Pointer()).Name()
+
+		jp := joinpointerImpl{
+			name:     funcName,
+			inputs:   inputs,
+			function: rawFunc,
+		}
+
+		if before != nil {
+			before(&jp)
+		}
+
+		if around != nil {
+			ret := around(&jp)
+			jp.outputs = ret
+		} else {
+			ret := jp.Invoke()
+			jp.outputs = ret
+		}
+
+		if after != nil {
+			after(&jp)
+		}
+
+		return jp.outputs
+	}
+
+	funcPrototype := reflect.TypeOf(function)
+	proxy := reflect.MakeFunc(funcPrototype, proxyDef).Interface()
+	return proxy
 }
