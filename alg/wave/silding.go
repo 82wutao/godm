@@ -4,14 +4,19 @@ func NewSildingFilter(r int, w []float32) ComplexFiltering {
 	if r != len(w) {
 		panic("radios must equals w.length")
 	}
+
+	wArr := make([]float64, len(w))
+	for i, v := range w {
+		wArr[i] = float64(v)
+	}
 	return &sildingFilterImpl{
-		weights: w,
+		weights: wArr,
 		radius:  r,
 	}
 }
 
 type sildingFilterImpl struct {
-	weights []float32
+	weights []float64
 	radius  int
 }
 
@@ -20,9 +25,9 @@ func (silding *sildingFilterImpl) Filtering(v float64) float64 {
 }
 
 func (silding *sildingFilterImpl) BatchFiltering(data []float64) []float64 {
-	ret := make([]float64, len(d), len(d))
+	ret := make([]float64, len(data), len(data))
 
-	for i := 0; i < len(d); i++ {
+	for i := 0; i < len(data); i++ {
 		v := float64(0)
 
 		var d float64
