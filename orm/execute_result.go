@@ -4,9 +4,6 @@ import (
 	"database/sql"
 )
 
-//TODO create delete update
-//TODO selete
-
 // ExecuteResult 执行结果
 type ExecuteResult interface {
 	LastInsertId() (int64, error)
