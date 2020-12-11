@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"dm.net/datamine/orm/clause"
+	"dm.net/datamine/orm/errors"
+	"dm.net/datamine/orm/util"
 	"dm.net/datamine/syntaxutil"
 )
 
@@ -15,8 +18,8 @@ type DatabaseConnection interface {
 	ExecuteCMD(sql string) ExecuteResult
 
 	CreateRecords(mapping StructToRecordMapping, structs []interface{}) ExecuteResult
-	DeleteRecords(table string, where WhereClause) ExecuteResult
-	UpdateRecords(mapping StructToRecordMapping, data interface{}, where WhereClause) ExecuteResult
+	DeleteRecords(table string, where clause.WhereClause) ExecuteResult
+	UpdateRecords(mapping StructToRecordMapping, data interface{}, where clause.WhereClause) ExecuteResult
 	QueryMultirecord(mapping RecordToStructMapping) ExecuteResult
 	QueryOneRecord(mapping RecordToStructMapping) ExecuteResult
 }
@@ -40,17 +43,17 @@ func (impl *simpleDBConnImple) ExecuteCMD(sql string) ExecuteResult {
 func (impl *simpleDBConnImple) CreateRecords(mapping StructToRecordMapping, structs []interface{}) ExecuteResult {
 
 	if len(structs) == 0 {
-		return newExecuteResult(nil, nil, nil, ERR_CREATE_PARAM_MUST_NOT_BE_EMPTY)
+		return newExecuteResult(nil, nil, nil, errors.ERR_CREATE_PARAM_MUST_NOT_BE_EMPTY)
 	}
 
 	fragments := make([]string, len(structs))
 	for i, s := range structs {
 		values := mapping.MapsStructToValues(s)
-		fragment := stringValues(values)
+		fragment := util.StringValues(values)
 		fragments[i] = fmt.Sprintf("(%s)", fragment)
 	}
 	insertSQL := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s",
-		mapping.MappedTable(), mapping.MappedColumn(), strings.Join(fragments, ","))
+		mapping.DataSourceMapped().DataSource(), mapping.FieldsMapped().Fields(), strings.Join(fragments, ","))
 
 	rst, err := impl.conn.Exec(insertSQL)
 	if err != nil {
@@ -59,7 +62,7 @@ func (impl *simpleDBConnImple) CreateRecords(mapping StructToRecordMapping, stru
 
 	return newExecuteResult(nil, nil, rst, nil)
 }
-func (impl *simpleDBConnImple) DeleteRecords(table string, where WhereClause) ExecuteResult {
+func (impl *simpleDBConnImple) DeleteRecords(table string, where clause.WhereClause) ExecuteResult {
 	whereExp := syntaxutil.TernaryOperate(where == nil, "", where.WhereSQL()).(string)
 
 	deleteSQL := fmt.Sprintf("DELETE FROM %s %s", table, whereExp)
@@ -70,19 +73,19 @@ func (impl *simpleDBConnImple) DeleteRecords(table string, where WhereClause) Ex
 
 	return newExecuteResult(nil, nil, rst, nil)
 }
-func (impl *simpleDBConnImple) UpdateRecords(mapping StructToRecordMapping, data interface{}, where WhereClause) ExecuteResult {
+func (impl *simpleDBConnImple) UpdateRecords(mapping StructToRecordMapping, data interface{}, where clause.WhereClause) ExecuteResult {
 
-	clmns := mapping.MappedColumn()
+	clmns := mapping.FieldsMapped().Fields()
 	updates := make([]string, len(clmns))
 
 	for i, p := range mapping.MapsStructToValues(data) {
-		v := stringValue(p)
+		v := util.StringValue(p)
 
 		updates[i] = fmt.Sprintf("%s = %s", clmns[i], v)
 	}
 
 	whereExp := syntaxutil.TernaryOperate(where == nil, "", where.WhereSQL())
-	sql := fmt.Sprintf("UPDATE %s SET %s %s", mapping.MappedTable(), strings.Join(updates, ","), whereExp)
+	sql := fmt.Sprintf("UPDATE %s SET %s %s", mapping.DataSourceMapped().DataSource(), strings.Join(updates, ","), whereExp)
 	rst, err := impl.conn.Exec(sql)
 	if err != nil {
 		return newExecuteResult(nil, nil, nil, err)
@@ -90,13 +93,16 @@ func (impl *simpleDBConnImple) UpdateRecords(mapping StructToRecordMapping, data
 
 	return newExecuteResult(nil, nil, rst, nil)
 }
+
 func (impl *simpleDBConnImple) QueryMultirecord(mapping RecordToStructMapping) ExecuteResult {
 
 	whereExp := syntaxutil.TernaryOperate(mapping.WhereClause() == nil, "", mapping.WhereClause().WhereSQL())
 	groupExp := syntaxutil.TernaryOperate(mapping.GroupClause() == nil, "", mapping.GroupClause().GroupSQL())
 	orderExp := syntaxutil.TernaryOperate(mapping.OrderClause() == nil, "", mapping.OrderClause().OrderSQL())
-	selectSQL := fmt.Sprintf("SELECT %s FROM %s %s %s %s",
-		mapping.SelectClause().SelectSQL(), mapping.FromClause().FromSQL(), whereExp, groupExp, orderExp)
+	offsetLimitExp := syntaxutil.TernaryOperate(mapping.OffsetLimitClause() == nil, "", mapping.OffsetLimitClause().OffsetLimitSQL())
+	selectSQL := fmt.Sprintf("SELECT %s FROM %s %s %s %s %s",
+		mapping.FieldsMapped().Fields(), mapping.DataSourceMapped().DataSource(),
+		whereExp, groupExp, orderExp, offsetLimitExp)
 	rows, err := impl.conn.Query(selectSQL)
 	if err != nil {
 		return newExecuteResult(nil, nil, nil, err)
@@ -108,7 +114,7 @@ func (impl *simpleDBConnImple) QueryOneRecord(mapping RecordToStructMapping) Exe
 	whereExp := syntaxutil.TernaryOperate(mapping.WhereClause() == nil, "", mapping.WhereClause().WhereSQL())
 	groupExp := syntaxutil.TernaryOperate(mapping.GroupClause() == nil, "", mapping.GroupClause().GroupSQL())
 	selectSQL := fmt.Sprintf("SELECT %s FROM %s %s %s",
-		mapping.SelectClause().SelectSQL(), mapping.FromClause().FromSQL(), whereExp, groupExp)
+		mapping.FieldsMapped().Fields(), mapping.DataSourceMapped().DataSource(), whereExp, groupExp)
 	row := impl.conn.QueryRow(selectSQL)
 
 	return newExecuteResult(row, nil, nil, nil)
@@ -127,7 +133,7 @@ func (jp *MultitableJoinpointer) String() string {
 
 func (impl *simpleDBConnImple) QueryMultitable(selects []string, mainTable, where string, parameters []interface{}, pointers []*MultitableJoinpointer) ExecuteResult {
 	if len(selects) == 0 {
-		return newExecuteResult(nil, nil, nil, ERR_QUERY_SELECT_CANOT_BE_BLANK)
+		return newExecuteResult(nil, nil, nil, errors.ERR_QUERY_SELECT_CANOT_BE_BLANK)
 	}
 
 	joinTables := make([]string, len(pointers))
@@ -136,7 +142,7 @@ func (impl *simpleDBConnImple) QueryMultitable(selects []string, mainTable, wher
 	}
 
 	for _, p := range parameters {
-		s := stringValue(p)
+		s := util.StringValue(p)
 		where = strings.Replace(where, "?", s, 0)
 	}
 
