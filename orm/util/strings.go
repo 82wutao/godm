@@ -34,7 +34,7 @@ func StringValue(val interface{}) string {
 			length := vt.Len()
 			results := make([]string, length)
 			for i := 0; i < length; i++ {
-				s := stringValue(vv.Index(i).Interface())
+				s := StringValue(vv.Index(i).Interface())
 				results[i] = s
 			}
 			return strings.Join(results, ",")
@@ -45,7 +45,7 @@ func StringValue(val interface{}) string {
 			length := vv.Len()
 			results := make([]string, length)
 			for i := 0; i < length; i++ {
-				s := stringValue(vv.Index(i).Interface())
+				s := StringValue(vv.Index(i).Interface())
 				results[i] = s
 			}
 			return strings.Join(results, ",")
@@ -53,7 +53,7 @@ func StringValue(val interface{}) string {
 			if vv.IsNil() {
 				return "NULL"
 			}
-			return stringValue(vv.Elem().Interface())
+			return StringValue(vv.Elem().Interface())
 		case reflect.Func, reflect.Interface:
 			if vv.IsNil() {
 				return "NULL"

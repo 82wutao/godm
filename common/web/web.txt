@@ -1,0 +1,204 @@
+更快的性能：基于基树的路由，内存占用少。没有反射。可预测的API性能。
+
+中间件支持：传入的HTTP请求可以由一系列中间件和最终操作来处理。例如：Logger、Authorization、GZIP，最后在数据库中发布消息。
+
+无崩溃：Gin可以捕捉HTTP请求期间发生的死机并恢复它。这样，您的服务器将始终可用。作为一个例子-也可以向哨兵报告这种恐慌！
+
+JSON验证：Gin可以解析和验证请求的JSON—例如，检查是否存在所需的值。
+
+路线分组：更好地组织路线。需要授权与不需要授权，不同的API版本…此外，组可以无限嵌套，而不会降低性能。
+
+错误管理：Gin提供了一种方便的方法来收集HTTP请求期间发生的所有错误。最终，中间件可以将它们写入日志文件、数据库并通过网络发送。
+
+内置呈现：Gin为JSON、XML和HTML呈现提供了一个易于使用的API。
+
+可扩展：创建一个新的中间件非常容易，只需查看示例代码即可。
+go get -u github.com/gin-gonic/gin
+package main
+
+import "github.com/gin-gonic/gin"
+
+func main() {
+	r := gin.Default()
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "pong",
+		})
+	})
+	r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+}
+///////////////////////////////
+使用RESTful支持、MVC模型，并使用bee工具快速构建应用程序，其功能包括代码热编译、自动测试、自动打包和部署。
+
+通过智能路由和监视，它能够监视您的QPS、内存和CPU使用情况以及goroutine状态。它让你完全控制你的在线应用。
+
+具有强大的内置模块，包括会话控制、缓存、日志记录、配置解析、性能监控、上下文处理、ORM支持和请求模拟。您可以为任何类型的应用程序提供强大的基础。
+
+使用native-Go-http包来处理请求和goroutine的高效并发。你的beego应用程序可以处理大量的流量，就像beego在许多产品中所做的那样。
+go get -u github.com/astaxie/beego
+package main
+
+import "github.com/astaxie/beego"
+
+func main(){
+    beego.Run()
+}
+///////////////////////////////////////////////////////////////
+优化路由器：高度优化的HTTP路由器，零动态内存分配，智能地优先考虑路由。
+
+可伸缩性：构建健壮和可伸缩的restfulapi，可以轻松地组织成组。
+
+自动TLS：自动安装TLS证书，来自Let''s Encrypt。
+
+HTTP/2支持：HTTP/2支持提高了速度并提供了更好的用户体验。
+
+中间件：许多内置的中间件可以使用，或者自己定义。中间件可以设置在根、组或路由级别。
+
+数据绑定：HTTP请求负载的数据绑定，包括JSON、XML或表单数据。
+
+数据呈现：用于发送各种HTTP响应的API，包括JSON、XML、HTML、文件、附件、内联、流或Blob。
+
+模板化：使用任何模板引擎进行模板渲染。
+
+可扩展性：自定义的中心HTTP错误处理。易于扩展的API。
+go get -u github.com/labstack/echo
+package main
+
+import (
+  "net/http"
+  "github.com/labstack/echo/v4"
+  "github.com/labstack/echo/v4/middleware"
+)
+
+func main() {
+  // Echo instance
+  e := echo.New()
+
+  // Middleware
+  e.Use(middleware.Logger())
+  e.Use(middleware.Recover())
+
+  // Routes
+  e.GET("/", hello)
+
+  // Start server
+  e.Logger.Fatal(e.Start(":1323"))
+}
+
+// Handler
+func hello(c echo.Context) error {
+  return c.String(http.StatusOK, "Hello, World!")
+}
+////////////////////////////////////////////////////
+在一个异构的SOA中运行-期望与大多数非Go kit服务交互。
+
+RPC作为主要的消息传递模式。
+
+可插拔的序列化和传输——不仅仅是HTTP上的JSON。
+
+在现有的基础设施内运行-没有特定工具或技术的要求。
+go get -u github.com/go-kit/kit
+//////////////////////////////
+优化速度：在现代硬件上轻松处理超过100K的qps和超过1M的并发保持活动连接。
+
+针对低内存使用率进行了优化。
+
+服务器提供了许多防DoS限制，如每个客户端IP的并发连接数、每个连接的请求数等等。
+
+FastHTTPAPI的设计能够扩展现有的客户机和服务器实现，或者从头开始编写定制的客户机和服务器实现。
+go get -u github.com/valyala/fasthttp
+package main
+
+import (
+	"flag"
+	"fmt"
+	"log"
+
+	"github.com/valyala/fasthttp"
+)
+
+var (
+	addr     = flag.String("addr", ":8080", "TCP address to listen to")
+	compress = flag.Bool("compress", false, "Whether to enable transparent response compression")
+)
+
+func main() {
+	flag.Parse()
+
+	h := requestHandler
+	if *compress {
+		h = fasthttp.CompressHandler(h)
+	}
+
+	if err := fasthttp.ListenAndServe(*addr, h); err != nil {
+		log.Fatalf("Error in ListenAndServe: %s", err)
+	}
+}
+
+func requestHandler(ctx *fasthttp.RequestCtx) {
+	fmt.Fprintf(ctx, "Hello, world!\n\n")
+}
+//////////////////
+它实现了http.Handler接口使其与标准兼容http.ServeMux.
+
+可以根据URL主机、路径、路径前缀、方案、头和查询值、HTTP方法或使用自定义匹配器来匹配请求。
+
+URL主机、路径和查询值可以具有带有可选正则表达式的变量。
+
+注册的url可以被构建，或者“反转”，这有助于维护对资源的引用。
+
+路由可以用作子程序：只有父路由匹配时才测试嵌套路由。这对于定义共享共同条件（如主机、路径前缀或其他重复属性）的路由组非常有用。作为奖励，这优化了请求匹配。
+go get -u github.com/gorilla/mux
+func main() {
+    r := mux.NewRouter()
+    r.HandleFunc("/articles", ArticlesHandler)
+    http.Handle("/", r)
+}
+
+func ArticlesCategoryHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    w.WriteHeader(http.StatusOK)
+    fmt.Fprintf(w, "Category: %v\n", vars["category"])
+}
+////////////
+仅显式匹配：与其他路由器，如http.ServeMux，请求的URL路径可以匹配多个模式。因此，它们有一些笨拙的模式优先级规则，比如最长匹配或首先注册，首先匹配。通过路由器的设计，一个请求只能匹配一个路由，或者不匹配。因此，也没有意外的匹配，这使得它非常适合搜索引擎优化，并改善用户体验。
+
+不要在意尾随斜杠：选择你喜欢的URL样式，如果尾随斜杠丢失或多了一个，路由器会自动重定向客户端。当然，只有当新路径有一个处理程序时，它才会这样做。如果你不喜欢，你可以关闭这种行为。
+
+路径自动修正：除了检测缺失的或额外的尾部斜杠之外，路由器还可以修复错误的情况并删除多余的路径元素（如../或//）。CAPS LOCK队长是你的一个用户吗？HttpRouter可以帮助他进行不区分大小写的查找并将其重定向到正确的URL。
+
+路由模式中的参数：停止解析请求的URL路径，只需给路径段一个名称，路由器就会将动态值传递给您。由于路由器的设计，路径参数非常便宜。
+
+零垃圾：匹配和分派过程生成零字节的垃圾。只进行堆分配是为路径参数构建键值对的片段，并构建新的上下文和请求对象（后者仅在标准Handler/HandlerFunc API中）。在3参数API中，如果请求路径不包含参数，则不需要进行单个堆分配。
+
+性能：基准测试不言而喻。
+
+不再发生服务器崩溃：您可以设置一个死机处理程序来处理在处理HTTP请求期间发生的死机。然后路由器恢复，让PanicHandler记录发生了什么，并提供一个很好的错误页面。
+
+完美的API：路由器设计鼓励构建合理的、分层的RESTful API。此外，它还内置了对选项请求和405方法不允许应答的本机支持。
+go get -u github.com/julienschmidt/httprouter
+package main
+
+import (
+    "fmt"
+    "net/http"
+    "log"
+
+    "github.com/julienschmidt/httprouter"
+)
+
+func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+    fmt.Fprint(w, "Welcome!\n")
+}
+
+func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+    fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
+}
+
+func main() {
+    router := httprouter.New()
+    router.GET("/", Index)
+    router.GET("/hello/:name", Hello)
+
+    log.Fatal(http.ListenAndServe(":8080", router))
+}
