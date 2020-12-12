@@ -9,8 +9,14 @@ import (
 type Pipeline interface {
 	Result() interface{}
 	Accept(src interface{})
+}
+type IntermediatePipeline interface {
+	Pipeline
 	NextPipeline() bool
-	TerminateStream() bool
+}
+type TerminalPipeline interface {
+	Pipeline
+	ShortCircuit() bool
 }
 
 // FilterPipeline 过滤环节
@@ -33,9 +39,6 @@ func (fp *FilterPipeline) Accept(src interface{}) {
 // NextPipeline 是否继续下一个环节
 func (fp *FilterPipeline) NextPipeline() bool { return fp.result != nil }
 
-// TerminateStream 是否短路，是否继续整个流
-func (fp *FilterPipeline) TerminateStream() bool { return false }
-
 // MapPipeline 映射环节
 type MapPipeline struct {
 	result   interface{}
@@ -50,9 +53,6 @@ func (mp *MapPipeline) Accept(src interface{}) { mp.result = mp.function(src) }
 
 // NextPipeline 是否继续下一个环节
 func (mp *MapPipeline) NextPipeline() bool { return true }
-
-// TerminateStream 是否短路，是否继续整个流
-func (mp *MapPipeline) TerminateStream() bool { return false }
 
 // LimitPipeline 头部有限的
 type LimitPipeline struct {
@@ -73,9 +73,6 @@ func (lp *LimitPipeline) Accept(src interface{}) {
 // NextPipeline 是否继续下一个环节
 func (lp *LimitPipeline) NextPipeline() bool { return lp.i <= lp.limit }
 
-// TerminateStream 是否短路，是否继续整个流
-func (lp *LimitPipeline) TerminateStream() bool { return lp.i > lp.limit }
-
 // SkipPipeline 跳过头部
 type SkipPipeline struct {
 	skip   int
@@ -94,9 +91,6 @@ func (sp *SkipPipeline) Accept(src interface{}) {
 
 // NextPipeline 是否继续下一个环节
 func (sp *SkipPipeline) NextPipeline() bool { return sp.i > sp.skip }
-
-// TerminateStream 是否短路，是否继续整个流
-func (sp *SkipPipeline) TerminateStream() bool { return false }
 
 // DistinctPipeline 去重
 type DistinctPipeline struct {
@@ -134,9 +128,6 @@ func (dp *DistinctPipeline) Accept(src interface{}) {
 // NextPipeline 是否继续下一个环节
 func (dp *DistinctPipeline) NextPipeline() bool { return dp.result != nil }
 
-// TerminateStream 是否短路，是否继续整个流
-func (dp *DistinctPipeline) TerminateStream() bool { return false }
-
 // 终结系列pipeline
 
 // ForeachPipeline 把函数作用在每个元素上
@@ -152,11 +143,8 @@ func (foreach *ForeachPipeline) Accept(src interface{}) {
 	foreach.function(src)
 }
 
-// NextPipeline 是否继续下一个环节
-func (foreach *ForeachPipeline) NextPipeline() bool { return true }
-
-// TerminateStream 是否短路，是否继续整个流
-func (foreach *ForeachPipeline) TerminateStream() bool { return false }
+// ShortCircuit 是否短路，是否继续整个流
+func (foreach *ForeachPipeline) ShortCircuit() bool { return false }
 
 // ReducePipeline 收敛所有元素为一个形态
 type ReducePipeline struct {
@@ -172,11 +160,8 @@ func (rp *ReducePipeline) Accept(src interface{}) {
 	rp.result = rp.accumulator(rp.result, src)
 }
 
-// NextPipeline 是否继续下一个环节
-func (rp *ReducePipeline) NextPipeline() bool { return true }
-
-// TerminateStream 是否短路，是否继续整个流
-func (rp *ReducePipeline) TerminateStream() bool { return false }
+// ShortCircuit 是否短路，是否继续整个流
+func (rp *ReducePipeline) ShortCircuit() bool { return false }
 
 // CollectPipeline 收集元素
 type CollectPipeline struct {
@@ -199,11 +184,8 @@ func (cp *CollectPipeline) Accept(src interface{}) {
 	cp.list.PushBack(src)
 }
 
-// NextPipeline 是否继续下一个环节
-func (cp *CollectPipeline) NextPipeline() bool { return true }
-
-// TerminateStream 是否短路，是否继续整个流
-func (cp *CollectPipeline) TerminateStream() bool { return false }
+// ShortCircuit 是否短路，是否继续整个流
+func (cp *CollectPipeline) ShortCircuit() bool { return false }
 
 // TopKPipeline 有序取头部
 type TopKPipeline struct {
@@ -237,16 +219,10 @@ func (ppl *TopKPipeline) Accept(src interface{}) {
 		}
 	}
 	ppl.list.PushBack(src)
-	if ppl.list.Len() == ppl.k+1 {
-		ppl.list.Remove(ppl.list.Back())
-	}
 }
 
-// NextPipeline 是否继续下一个环节
-func (ppl *TopKPipeline) NextPipeline() bool { return true }
-
-// TerminateStream 是否短路，是否继续整个流
-func (ppl *TopKPipeline) TerminateStream() bool { return false }
+// ShortCircuit 是否短路，是否继续整个流
+func (ppl *TopKPipeline) ShortCircuit() bool { return false }
 
 // GroupPipeline 分组
 type GroupPipeline struct {
@@ -267,11 +243,8 @@ func (ppl *GroupPipeline) Accept(src interface{}) {
 	ppl.result.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(value))
 }
 
-// NextPipeline 是否继续下一个环节
-func (ppl *GroupPipeline) NextPipeline() bool { return true }
-
-// TerminateStream 是否短路，是否继续整个流
-func (ppl *GroupPipeline) TerminateStream() bool { return false }
+// ShortCircuit 是否短路，是否继续整个流
+func (ppl *GroupPipeline) ShortCircuit() bool { return false }
 
 // supplier func() interface{}, keyGetter, valueGetter func(src interface{},
 // 	reduceResult func() interface{}, accumulator func(result, value interface{})
@@ -303,8 +276,5 @@ func (ppl *GroupAndReducePipeline) Accept(src interface{}) {
 	ppl.result.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(rr))
 }
 
-// NextPipeline 是否继续下一个环节
-func (ppl *GroupAndReducePipeline) NextPipeline() bool { return true }
-
-// TerminateStream 是否短路，是否继续整个流
-func (ppl *GroupAndReducePipeline) TerminateStream() bool { return false }
+// ShortCircuit 是否短路，是否继续整个流
+func (ppl *GroupAndReducePipeline) ShortCircuit() bool { return false }

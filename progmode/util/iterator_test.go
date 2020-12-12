@@ -6,7 +6,7 @@ import (
 
 func Test_SliceIterator(t *testing.T) {
 	sliceInst := make([]string, 0)
-	sliceIter := NewSliceIterator(sliceInst)
+	sliceIter := NewIteratorFromSlice(sliceInst)
 	if sliceIter == nil {
 		t.Error("New slice iterator err")
 	}
@@ -17,7 +17,7 @@ func Test_SliceIterator(t *testing.T) {
 	}
 
 	sliceInst = append(sliceInst, "zero")
-	sliceIter = NewSliceIterator(sliceInst)
+	sliceIter = NewIteratorFromSlice(sliceInst)
 	if sliceIter == nil {
 		t.Error("New slice iterator err")
 	}
@@ -41,7 +41,7 @@ func Test_SliceIterator(t *testing.T) {
 
 func Test_MapIterator(t *testing.T) {
 	mapInst := make(map[int]string)
-	mapIter := NewMapIterator(mapInst)
+	mapIter := NewIteratorFromMap(mapInst)
 	if mapIter == nil {
 		t.Error("New map iterator err")
 	}
@@ -52,7 +52,7 @@ func Test_MapIterator(t *testing.T) {
 	}
 
 	mapInst[0] = "zero"
-	mapIter = NewMapIterator(mapInst)
+	mapIter = NewIteratorFromMap(mapInst)
 	if mapIter == nil {
 		t.Error("New map iterator err")
 	}

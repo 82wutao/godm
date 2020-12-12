@@ -23,9 +23,6 @@ func Test_FilterPipeline(t *testing.T) {
 	if filter.Result().(int) != 0 {
 		t.Error("filter ,ele:0 should be equals 0")
 	}
-	if filter.TerminateStream() {
-		t.Error("filter ,should never terminal")
-	}
 
 	filter.Accept(1)
 	if filter.NextPipeline() {
@@ -33,9 +30,6 @@ func Test_FilterPipeline(t *testing.T) {
 	}
 	if filter.Result() != nil {
 		t.Error("filter ,ele:1 should be equals nil")
-	}
-	if filter.TerminateStream() {
-		t.Error("filter ,should never terminal")
 	}
 
 }
@@ -54,9 +48,6 @@ func Test_MapPipeline(t *testing.T) {
 	}
 	if mapping.Result().(string) != "0" {
 		t.Error("mapping ,should map 0 to '0' ")
-	}
-	if mapping.TerminateStream() {
-		t.Error("filter ,should never terminal")
 	}
 
 }
@@ -77,17 +68,10 @@ func Test_LimitPipeline(t *testing.T) {
 		if pipeline.Result().(int) != i {
 			t.Errorf("limit ,%d should equals %d ", pipeline.Result().(int), i)
 		}
-		if pipeline.TerminateStream() != (i >= 3) {
-			t.Error("limit ,should terminal int case that i>=3")
-		}
 
 		if pipeline.NextPipeline() {
 			r := pipeline.Result().(int)
 			collection = append(collection, r)
-		}
-
-		if pipeline.TerminateStream() {
-			break
 		}
 	}
 	if len(collection) != 3 {
@@ -112,18 +96,12 @@ func Test_SkipPipeline(t *testing.T) {
 		if pipeline.Result().(int) != i {
 			t.Errorf("skip ,%d should equals %d ", pipeline.Result().(int), i)
 		}
-		if pipeline.TerminateStream() {
-			t.Error("skip ,should never terminal ")
-		}
 
 		if pipeline.NextPipeline() {
 			r := pipeline.Result().(int)
 			collection = append(collection, r)
 		}
 
-		if pipeline.TerminateStream() {
-			break
-		}
 	}
 	if len(collection) != 2 {
 		t.Error("limit ,resultset 's length should be 3")
@@ -176,9 +154,6 @@ func Test_DistinctPipeline(t *testing.T) {
 		if pipeline.Result() != result {
 			t.Errorf("distinct ,result expect %v,but %v ", result, pipeline.Result())
 		}
-		if pipeline.TerminateStream() {
-			t.Error("distinct ,should never terminal ")
-		}
 
 		if pipeline.NextPipeline() {
 			r := pipeline.Result()
@@ -212,14 +187,11 @@ func Test_ForeachPipeline(t *testing.T) {
 
 	for _, p := range persons {
 		pipeline.Accept(p)
-		if !pipeline.NextPipeline() {
-			t.Errorf("foreach ,calling next expects true")
-		}
 
 		if pipeline.Result() != nil {
 			t.Errorf("foreach ,result expect nil ")
 		}
-		if pipeline.TerminateStream() {
+		if pipeline.ShortCircuit() {
 			t.Error("foreach ,should never terminal ")
 		}
 	}
@@ -242,11 +214,8 @@ func Test_ReducePipeline(t *testing.T) {
 
 	for _, p := range persons {
 		pipeline.Accept(p)
-		if !pipeline.NextPipeline() {
-			t.Errorf("reduce ,calling next expects true")
-		}
 
-		if pipeline.TerminateStream() {
+		if pipeline.ShortCircuit() {
 			t.Error("reduce ,should never terminal ")
 		}
 	}
@@ -271,11 +240,8 @@ func Test_CollectPipeline(t *testing.T) {
 
 	for _, p := range persons {
 		pipeline.Accept(p.name)
-		if !pipeline.NextPipeline() {
-			t.Errorf("collect ,calling next expects true")
-		}
 
-		if pipeline.TerminateStream() {
+		if pipeline.ShortCircuit() {
 			t.Error("collect ,should never terminal ")
 		}
 	}
@@ -320,11 +286,8 @@ func Test_TopKPipeline(t *testing.T) {
 
 	for _, p := range persons {
 		pipeline.Accept(p)
-		if !pipeline.NextPipeline() {
-			t.Errorf("topk ,calling next expects true")
-		}
 
-		if pipeline.TerminateStream() {
+		if pipeline.ShortCircuit() {
 			t.Error("topk ,should never terminal ")
 		}
 	}
@@ -360,11 +323,7 @@ func Test_GroupPipeline(t *testing.T) {
 
 	for _, p := range persons {
 		pipeline.Accept(p)
-		if !pipeline.NextPipeline() {
-			t.Errorf("topk ,calling next expects true")
-		}
-
-		if pipeline.TerminateStream() {
+		if pipeline.ShortCircuit() {
 			t.Error("topk ,should never terminal ")
 		}
 	}
@@ -395,11 +354,8 @@ func Test_GroupAndReducePipeline(t *testing.T) {
 
 	for _, p := range persons {
 		pipeline.Accept(p)
-		if !pipeline.NextPipeline() {
-			t.Errorf("groupreduce ,calling next expects true")
-		}
 
-		if pipeline.TerminateStream() {
+		if pipeline.ShortCircuit() {
 			t.Error("groupreduce ,should never terminal ")
 		}
 	}
@@ -421,38 +377,3 @@ func Test_GroupAndReducePipeline(t *testing.T) {
 		t.Errorf("groupreduce ,e  expect %d ,but not", 110)
 	}
 }
-
-// // GroupPipeline 分组
-// type GroupAndReducePipeline struct {
-// 	result                  reflect.Value
-// 	keyGetter               func(src interface{}) interface{}
-// 	valueGetter             func(src interface{}) interface{}
-// 	reduceResultSupplier    func() interface{}
-// 	reduceResultAccumulator func(result, value interface{}) interface{}
-// }
-
-// // Result 当前环节的输出结果，也是下一个环节的输入
-// func (ppl *GroupAndReducePipeline) Result() interface{} {
-// 	return ppl.result.Interface()
-// }
-
-// // Accept 当前环节处理输入
-// func (ppl *GroupAndReducePipeline) Accept(src interface{}) {
-
-// 	key := ppl.keyGetter(src)
-// 	value := ppl.valueGetter(src)
-
-// 	reduceResult := ppl.result.MapIndex(reflect.ValueOf(key))
-// 	if reduceResult.IsZero() {
-// 		reduceResult = reflect.ValueOf(ppl.reduceResultSupplier())
-// 	}
-
-// 	rr := ppl.reduceResultAccumulator(reduceResult.Interface(), value)
-// 	ppl.result.SetMapIndex(reflect.ValueOf(key), reflect.ValueOf(rr))
-// }
-
-// // NextPipeline 是否继续下一个环节
-// func (ppl *GroupAndReducePipeline) NextPipeline() bool { return true }
-
-// // TerminateStream 是否短路，是否继续整个流
-// func (ppl *GroupAndReducePipeline) TerminateStream() bool { return false }

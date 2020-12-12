@@ -1,6 +1,9 @@
 package util
 
-import "reflect"
+import (
+	"errors"
+	"reflect"
+)
 
 // Iterator 迭代器
 type Iterator interface {
@@ -62,8 +65,13 @@ func (mi *MapIterator) Next() interface{} {
 	}
 }
 
-// NewSliceIterator 从Slice构建一个切片迭代器
-func NewSliceIterator(slice interface{}) Iterator {
+// NewIteratorFromSlice 从Slice构建一个切片迭代器
+func NewIteratorFromSlice(slice interface{}) Iterator {
+	t := reflect.TypeOf(slice)
+	if t.Kind() != reflect.Slice {
+		panic(errors.New("input parameter is not a slice"))
+	}
+
 	iter := SliceIterator{
 		i:        0,
 		elements: reflect.ValueOf(slice),
@@ -71,8 +79,13 @@ func NewSliceIterator(slice interface{}) Iterator {
 	return &iter
 }
 
-// NewMapIterator 从Map构建一个切片迭代器
-func NewMapIterator(mapping interface{}) Iterator {
+// NewIteratorFromMap 从Map构建一个切片迭代器
+func NewIteratorFromMap(mapping interface{}) Iterator {
+	t := reflect.TypeOf(mapping)
+	if t.Kind() != reflect.Map {
+		panic(errors.New("input parameter is not a map"))
+	}
+
 	iter := MapIterator{
 		iter: reflect.ValueOf(mapping).MapRange(),
 	}
