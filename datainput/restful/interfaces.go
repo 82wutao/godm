@@ -9,7 +9,3 @@ import (
 func hello(c echo.Context) error {
 	return c.String(http.StatusOK, "Hello, World!")
 }
-
-func (h hello) LoadedByEcho(e *echo.Echo) {
-
-}

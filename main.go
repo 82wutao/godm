@@ -6,39 +6,43 @@ import (
 
 	coll_list "container/list"
 
-	"dm.net/datamine/alg/wave"
-	"dm.net/datamine/kernel"
 	"dm.net/datamine/kernel/schedule"
 	"dm.net/datamine/kernel/types"
+	"dm.net/datamine/visualization"
+	// "dm.net/datamine/alg/wave"
+	// "dm.net/datamine/kernel"
+	// "dm.net/datamine/kernel/schedule"
+	// "dm.net/datamine/kernel/types"
 )
 
 func main() {
-	chain := NewTestChain()
-	kernel.RegisterProcess("test", chain)
+	// chain := NewTestChain()
+	// kernel.RegisterProcess("test", chain)
 
-	var data1 = TestRawPresenting{1}
-	var data2 = TestRawPresenting{2}
+	// var data1 = TestRawPresenting{1}
+	// var data2 = TestRawPresenting{2}
 
-	kernel.Dispatch(&types.DataPresenting{Name: "test", Data: &data1})
-	kernel.Dispatch(&types.DataPresenting{Name: "test", Data: &data2})
+	// kernel.Dispatch(&types.DataPresenting{Name: "test", Data: &data1})
+	// kernel.Dispatch(&types.DataPresenting{Name: "test", Data: &data2})
 
-	filter := wave.NewMedianFilter(5)
+	// filter := wave.NewMedianFilter(5)
 
-	ret := filter.BatchFiltering([]float64{9, 5, 2, 10, 7, 4, 1, 6, 3, 8})
-	for i := 0; i < len(ret); i++ {
-		fmt.Printf("%f ", ret[i])
-	}
-	fmt.Println()
+	// ret := filter.BatchFiltering([]float64{9, 5, 2, 10, 7, 4, 1, 6, 3, 8})
+	// for i := 0; i < len(ret); i++ {
+	// 	fmt.Printf("%f ", ret[i])
+	// }
+	// fmt.Println()
 
-	filter = wave.NewAvgFilter(5)
+	// filter = wave.NewAvgFilter(5)
 
-	ret = filter.BatchFiltering([]float64{689, 5882, 1377, 5828,
-		2481, 3037, 5981, 3277, 7732, 9061, 1185, 9374, 2425, 2455, 2453, 4962,
-		6144, 6657, 9672, 684, 552, 2224, 7541, 4671, 8147, 9773, 5187, 6035})
-	for i := 0; i < len(ret); i++ {
-		fmt.Printf("%f ", ret[i])
-	}
-	fmt.Println()
+	// ret = filter.BatchFiltering([]float64{689, 5882, 1377, 5828,
+	// 	2481, 3037, 5981, 3277, 7732, 9061, 1185, 9374, 2425, 2455, 2453, 4962,
+	// 	6144, 6657, 9672, 684, 552, 2224, 7541, 4671, 8147, 9773, 5187, 6035})
+	// for i := 0; i < len(ret); i++ {
+	// 	fmt.Printf("%f ", ret[i])
+	// }
+	// fmt.Println()
+	visualization.AppLaunch()
 }
 
 // qps
