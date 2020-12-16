@@ -17,6 +17,9 @@ func AppLaunch() {
 			HandleFunc: about,
 		}})
 
-	app.Static("/static", "view/static")
+	app.Static("/html", "visualization/view/html")
+	app.Static("/img", "visualization/view/static/image")
+	app.Static("/css", "visualization/view/static/css")
+	app.Static("/js", "visualization/view/static/js")
 	app.Start(":8080")
 }
