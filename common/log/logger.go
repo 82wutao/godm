@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Logger log master
 type Logger interface {
 	Debug(format string, args ...interface{})
 	Info(format string, args ...interface{})
@@ -19,6 +20,8 @@ type Logger interface {
 }
 
 type simpleLogger struct {
+	queue chan []byte
+
 	async     bool
 	level     LogLevel
 	layouts   []LayoutElement
@@ -29,7 +32,11 @@ func layout(layouts []LayoutElement, lvl LogLevel, msg string) ([]byte, time.Tim
 	buffer := make([]string, len(layouts))
 
 	timestamp := time.Now().UTC()
-	pc, file, line, _ := runtime.Caller(3)
+	var (
+		pc   uintptr
+		file string
+		line int
+	)
 
 	for i, e := range layouts {
 		switch e {
@@ -40,10 +47,19 @@ func layout(layouts []LayoutElement, lvl LogLevel, msg string) ([]byte, time.Tim
 		case DATATIME:
 			buffer[i] = timestamp.Format("15:04:05.000")
 		case FILE:
+			if pc == 0 {
+				pc, file, line, _ = runtime.Caller(2)
+			}
 			buffer[i] = file
 		case FUNC:
+			if pc == 0 {
+				pc, file, line, _ = runtime.Caller(2)
+			}
 			buffer[i] = runtime.FuncForPC(pc).Name()
 		case LINE:
+			if pc == 0 {
+				pc, file, line, _ = runtime.Caller(2)
+			}
 			buffer[i] = strconv.Itoa(line)
 		case MESSAGE:
 			buffer[i] = msg
@@ -62,14 +78,7 @@ func (l *simpleLogger) Debug(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	log, _ := layout(l.layouts, l.level, msg)
 
-	for _, appender := range l.appenders {
-		//TODO
-		if l.async {
-			go appender.Flush(log)
-		} else {
-			appender.Flush(log)
-		}
-	}
+	l.queue <- log
 }
 
 func (l *simpleLogger) Info(format string, args ...interface{}) {
@@ -80,14 +89,7 @@ func (l *simpleLogger) Info(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	log, _ := layout(l.layouts, l.level, msg)
 
-	for _, appender := range l.appenders {
-		//TODO
-		if l.async {
-			go appender.Flush(log)
-		} else {
-			appender.Flush(log)
-		}
-	}
+	l.queue <- log
 }
 func (l *simpleLogger) Warn(format string, args ...interface{}) {
 	if !l.Enable(WarnLevel) {
@@ -97,14 +99,7 @@ func (l *simpleLogger) Warn(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	log, _ := layout(l.layouts, l.level, msg)
 
-	for _, appender := range l.appenders {
-		//TODO
-		if l.async {
-			go appender.Flush(log)
-		} else {
-			appender.Flush(log)
-		}
-	}
+	l.queue <- log
 }
 func (l *simpleLogger) Error(format string, args ...interface{}) {
 	if !l.Enable(ErrorLevel) {
@@ -114,14 +109,7 @@ func (l *simpleLogger) Error(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	log, _ := layout(l.layouts, l.level, msg)
 
-	for _, appender := range l.appenders {
-		//TODO
-		if l.async {
-			go appender.Flush(log)
-		} else {
-			appender.Flush(log)
-		}
-	}
+	l.queue <- log
 }
 func (l *simpleLogger) Fatal(format string, args ...interface{}) {
 	if !l.Enable(FatalLevel) {
@@ -131,17 +119,20 @@ func (l *simpleLogger) Fatal(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	log, _ := layout(l.layouts, l.level, msg)
 
-	for _, appender := range l.appenders {
-		//TODO
-		if l.async {
-			go appender.Flush(log)
-		} else {
-			appender.Flush(log)
-		}
-	}
+	l.queue <- log
 }
 func (l *simpleLogger) Enable(lvl LogLevel) bool {
 	return l.level < lvl
+}
+
+func (l *simpleLogger) outputLog() {
+	for {
+		select {
+		case i := <-l.queue:
+			l.appenders[0].Flush(i)
+			//TODO exit
+		}
+	}
 }
 
 // NewLogger new a logger instance
@@ -158,10 +149,15 @@ func NewLogger(async bool, lvl LogLevel, layout []LayoutElement, appenders ...Ap
 	// compare time
 	// queue msg waiting be send
 	// }
-	return &simpleLogger{
+	logger := &simpleLogger{
+		queue: make(chan []byte),
+
 		async:     async,
 		level:     lvl,
 		layouts:   layout,
 		appenders: appenders,
 	}
+	go logger.outputLog()
+
+	return logger
 }

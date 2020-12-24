@@ -6,6 +6,7 @@ import (
 
 	coll_list "container/list"
 
+	"dm.net/datamine/common/log"
 	"dm.net/datamine/kernel/schedule"
 	"dm.net/datamine/kernel/types"
 	"dm.net/datamine/visualization"
@@ -42,6 +43,10 @@ func main() {
 	// 	fmt.Printf("%f ", ret[i])
 	// }
 	// fmt.Println()
+	logger := log.NewLogger(false, log.DebugLevel,
+		[]log.LayoutElement{log.LEVEL, log.DATATIME, log.FILE, log.FUNC, log.LINE, log.MESSAGE},
+		log.NewStdoutAppender())
+	logger.Error("saafsadfasfsafd")
 	visualization.AppLaunch()
 }
 
