@@ -17,7 +17,7 @@ type Joinpointer struct {
 
 // JoinQuery 多表联合查询
 type JoinQuery interface {
-	DataSourceMapped
+	DataSourceMapped() TargetDataSource
 	InnerJoin(otherTbl, otherTblAlias string, pointers ...Joinpointer) JoinQuery
 	LeftJoin(otherTbl, otherTblAlias string, pointers ...Joinpointer) JoinQuery
 	RightJoin(otherTbl, otherTblAlias string, pointers ...Joinpointer) JoinQuery
@@ -41,8 +41,8 @@ func (impl *simpleJoinpointerImpl) Express() string {
 
 	pointers := make([]string, len(impl.pointers))
 	for i, p := range impl.pointers {
-		aTbl := syntaxutil.TernaryOperate(p.ATblAlias == "", impl.mainTblAlias, p.ATblAlias)
-		bTbl := syntaxutil.TernaryOperate(p.BTblAlias == "", impl.tblAlias, p.BTblAlias)
+		aTbl := syntaxutil.TernaryOperate(p.ATblAlias == "", impl.mainTblAlias, func() interface{} { return p.ATblAlias })
+		bTbl := syntaxutil.TernaryOperate(p.BTblAlias == "", impl.tblAlias, func() interface{} { return p.BTblAlias })
 		pointers[i] = fmt.Sprintf("%s.%s = %s.%s", aTbl, p.ATblKey, bTbl, p.BTblKey)
 	}
 	pointersSQL := strings.Join(pointers, " AND ")
@@ -59,14 +59,16 @@ type simpleJoinQueryImpl struct {
 	moreTbls  []*simpleJoinpointerImpl
 }
 
-func (joinQuery *simpleJoinQueryImpl) DataSource() string {
-	tbls := make([]string, len(joinQuery.moreTbls)+1)
-	tbls[0] = fmt.Sprintf("%s %s", joinQuery.mainTbl, joinQuery.mainAlias)
+func (joinQuery *simpleJoinQueryImpl) DataSourceMapped() TargetDataSource {
+	return func() string {
+		tbls := make([]string, len(joinQuery.moreTbls)+1)
+		tbls[0] = fmt.Sprintf("%s %s", joinQuery.mainTbl, joinQuery.mainAlias)
 
-	for i, t := range joinQuery.moreTbls {
-		tbls[i+1] = t.Express()
+		for i, t := range joinQuery.moreTbls {
+			tbls[i+1] = t.Express()
+		}
+		return strings.Join(tbls, " ")
 	}
-	return strings.Join(tbls, " ")
 }
 
 func (joinQuery *simpleJoinQueryImpl) InnerJoin(otherTbl, otherTblAlias string, pointers ...Joinpointer) JoinQuery {

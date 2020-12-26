@@ -40,7 +40,7 @@ func readMultirecord(rows *sql.Rows,
 	rcver []interface{},
 	handleRecord func(record []interface{})) error {
 
-	for next := rows.NextResultSet(); next; next = rows.NextResultSet() {
+	for next := true; next; next = rows.NextResultSet() {
 		for more := rows.Next(); more; more = rows.Next() {
 			err := rows.Scan(rcver...)
 			if err != nil {

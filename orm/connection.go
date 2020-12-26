@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	_ "github.com/lib/pq"
+
 	"dm.net/datamine/orm/clause"
 	"dm.net/datamine/orm/errors"
 	"dm.net/datamine/orm/util"
@@ -53,7 +55,7 @@ func (impl *simpleDBConnImple) CreateRecords(mapping StructToRecordMapping, stru
 		fragments[i] = fmt.Sprintf("(%s)", fragment)
 	}
 	insertSQL := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s",
-		mapping.DataSourceMapped().DataSource(), mapping.FieldsMapped().Fields(), strings.Join(fragments, ","))
+		mapping.DataSourceMapped(), strings.Join(mapping.FieldsMapped(), ","), strings.Join(fragments, ","))
 
 	rst, err := impl.conn.Exec(insertSQL)
 	if err != nil {
@@ -63,7 +65,7 @@ func (impl *simpleDBConnImple) CreateRecords(mapping StructToRecordMapping, stru
 	return newExecuteResult(nil, nil, rst, nil)
 }
 func (impl *simpleDBConnImple) DeleteRecords(table string, where clause.WhereClause) ExecuteResult {
-	whereExp := syntaxutil.TernaryOperate(where == nil, "", where.WhereSQL()).(string)
+	whereExp := syntaxutil.TernaryOperate(where == nil, "", func() interface{} { return where.WhereSQL() }).(string)
 
 	deleteSQL := fmt.Sprintf("DELETE FROM %s %s", table, whereExp)
 	rst, err := impl.conn.Exec(deleteSQL)
@@ -75,7 +77,7 @@ func (impl *simpleDBConnImple) DeleteRecords(table string, where clause.WhereCla
 }
 func (impl *simpleDBConnImple) UpdateRecords(mapping StructToRecordMapping, data interface{}, where clause.WhereClause) ExecuteResult {
 
-	clmns := mapping.FieldsMapped().Fields()
+	clmns := mapping.FieldsMapped()
 	updates := make([]string, len(clmns))
 
 	for i, p := range mapping.MapsStructToValues(data) {
@@ -84,8 +86,8 @@ func (impl *simpleDBConnImple) UpdateRecords(mapping StructToRecordMapping, data
 		updates[i] = fmt.Sprintf("%s = %s", clmns[i], v)
 	}
 
-	whereExp := syntaxutil.TernaryOperate(where == nil, "", where.WhereSQL())
-	sql := fmt.Sprintf("UPDATE %s SET %s %s", mapping.DataSourceMapped().DataSource(), strings.Join(updates, ","), whereExp)
+	whereExp := syntaxutil.TernaryOperate(where == nil, "", func() interface{} { return where.WhereSQL() })
+	sql := fmt.Sprintf("UPDATE %s SET %s %s", mapping.DataSourceMapped(), strings.Join(updates, ","), whereExp)
 	rst, err := impl.conn.Exec(sql)
 	if err != nil {
 		return newExecuteResult(nil, nil, nil, err)
@@ -96,12 +98,12 @@ func (impl *simpleDBConnImple) UpdateRecords(mapping StructToRecordMapping, data
 
 func (impl *simpleDBConnImple) QueryMultirecord(mapping RecordToStructMapping) ExecuteResult {
 
-	whereExp := syntaxutil.TernaryOperate(mapping.WhereClause() == nil, "", mapping.WhereClause().WhereSQL())
-	groupExp := syntaxutil.TernaryOperate(mapping.GroupClause() == nil, "", mapping.GroupClause().GroupSQL())
-	orderExp := syntaxutil.TernaryOperate(mapping.OrderClause() == nil, "", mapping.OrderClause().OrderSQL())
-	offsetLimitExp := syntaxutil.TernaryOperate(mapping.OffsetLimitClause() == nil, "", mapping.OffsetLimitClause().OffsetLimitSQL())
+	whereExp := syntaxutil.TernaryOperate(mapping.WhereClause == nil, "", func() interface{} { return mapping.WhereClause.WhereSQL() })
+	groupExp := syntaxutil.TernaryOperate(mapping.GroupClause == nil, "", func() interface{} { return mapping.GroupClause.GroupSQL() })
+	orderExp := syntaxutil.TernaryOperate(mapping.OrderClause == nil, "", func() interface{} { return mapping.OrderClause.OrderSQL() })
+	offsetLimitExp := syntaxutil.TernaryOperate(mapping.OffsetLimitClause == nil, "", func() interface{} { return mapping.OffsetLimitClause.OffsetLimitSQL() })
 	selectSQL := fmt.Sprintf("SELECT %s FROM %s %s %s %s %s",
-		mapping.FieldsMapped().Fields(), mapping.DataSourceMapped().DataSource(),
+		strings.Join(mapping.FieldsMapped(), ","), mapping.DataSourceMapped(),
 		whereExp, groupExp, orderExp, offsetLimitExp)
 	rows, err := impl.conn.Query(selectSQL)
 	if err != nil {
@@ -111,10 +113,10 @@ func (impl *simpleDBConnImple) QueryMultirecord(mapping RecordToStructMapping) E
 	return newExecuteResult(nil, rows, nil, nil)
 }
 func (impl *simpleDBConnImple) QueryOneRecord(mapping RecordToStructMapping) ExecuteResult {
-	whereExp := syntaxutil.TernaryOperate(mapping.WhereClause() == nil, "", mapping.WhereClause().WhereSQL())
-	groupExp := syntaxutil.TernaryOperate(mapping.GroupClause() == nil, "", mapping.GroupClause().GroupSQL())
+	whereExp := syntaxutil.TernaryOperate(mapping.WhereClause == nil, "", func() interface{} { return mapping.WhereClause.WhereSQL() })
+	groupExp := syntaxutil.TernaryOperate(mapping.GroupClause == nil, "", func() interface{} { return mapping.GroupClause.GroupSQL() })
 	selectSQL := fmt.Sprintf("SELECT %s FROM %s %s %s",
-		mapping.FieldsMapped().Fields(), mapping.DataSourceMapped().DataSource(), whereExp, groupExp)
+		strings.Join(mapping.FieldsMapped(), ","), mapping.DataSourceMapped(), whereExp, groupExp)
 	row := impl.conn.QueryRow(selectSQL)
 
 	return newExecuteResult(row, nil, nil, nil)
@@ -168,10 +170,14 @@ type ConnectionProperties struct {
 
 //OpenConnection 打开
 func OpenConnection(prop ConnectionProperties) (DatabaseConnection, error) {
+	// connStr := "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full"
+	// db, err := sql.Open("postgres", connStr)
+
 	dialect := prop.Dialect
-	url := fmt.Sprintf("%s:%s@%s(%s:%d)/%s?charset=%s",
+	url := fmt.Sprintf("%s://%s:%s@%s:%d/%s?charset=%s&sslmode=disable",
+		prop.Dialect,
 		prop.User, prop.Password,
-		prop.ConnectionType, prop.Host, prop.Port,
+		prop.Host, prop.Port,
 		prop.Database, prop.Charset)
 	db, err := sql.Open(dialect, url)
 	if err != nil {

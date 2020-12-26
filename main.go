@@ -10,6 +10,8 @@ import (
 	"dm.net/datamine/kernel/schedule"
 	"dm.net/datamine/kernel/types"
 	"dm.net/datamine/visualization"
+	"dm.net/datamine/visualization/dao"
+	"dm.net/datamine/visualization/resource"
 	// "dm.net/datamine/alg/wave"
 	// "dm.net/datamine/kernel"
 	// "dm.net/datamine/kernel/schedule"
@@ -46,6 +48,9 @@ func main() {
 	logger := log.NewLogger(false, log.DebugLevel,
 		[]log.LayoutElement{log.LEVEL, log.DATATIME, log.FILE, log.FUNC, log.LINE, log.MESSAGE},
 		log.NewStdoutAppender())
+
+	resource.InitDBConnection()
+	dao.LoadAccounts()
 	logger.Error("saafsadfasfsafd")
 	visualization.AppLaunch()
 }
