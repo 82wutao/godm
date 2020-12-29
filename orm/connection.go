@@ -34,16 +34,42 @@ func (impl *simpleDBConnImple) IsConnecting() bool {
 func (impl *simpleDBConnImple) ExecuteCMD(sql string) ExecuteResult {
 	rst, err := impl.conn.Exec(sql)
 	if err != nil {
-		return newExecuteResult(nil, nil, nil, err)
+		return ExecuteResult{
+			execError:       err, // error
+			lastInsertID:    0,   //int64
+			lastInsertErr:   nil, //error
+			rowsAffected:    0,   //int64
+			rowsAffectedErr: nil, //error
+			row:             nil, //*sql.Row
+			rows:            nil, //*sql.Rows
+		}
 	}
-
-	return newExecuteResult(nil, nil, rst, nil)
+	lastID, lastErr := rst.LastInsertId()
+	affected, affErr := rst.RowsAffected()
+	rst.RowsAffected()
+	return ExecuteResult{
+		execError:       nil,      // error
+		lastInsertID:    lastID,   //int64
+		lastInsertErr:   lastErr,  //error
+		rowsAffected:    affected, //int64
+		rowsAffectedErr: affErr,   //error
+		row:             nil,      //*sql.Row
+		rows:            nil,      //*sql.Rows
+	}
 }
 
 func (impl *simpleDBConnImple) CreateRecords(mapping StructToRecordMapping, structs []interface{}) ExecuteResult {
 
 	if len(structs) == 0 {
-		return newExecuteResult(nil, nil, nil, errors.ERR_CREATE_PARAM_MUST_NOT_BE_EMPTY)
+		return ExecuteResult{
+			execError:       errors.ERR_CREATE_PARAM_MUST_NOT_BE_EMPTY, // error
+			lastInsertID:    0,                                         //int64
+			lastInsertErr:   nil,                                       //error
+			rowsAffected:    0,                                         //int64
+			rowsAffectedErr: nil,                                       //error
+			row:             nil,                                       //*sql.Row
+			rows:            nil,                                       //*sql.Rows
+		}
 	}
 
 	fragments := make([]string, len(structs))
@@ -57,10 +83,27 @@ func (impl *simpleDBConnImple) CreateRecords(mapping StructToRecordMapping, stru
 
 	rst, err := impl.conn.Exec(insertSQL)
 	if err != nil {
-		return newExecuteResult(nil, nil, nil, err)
+		return ExecuteResult{
+			execError:       err, // error
+			lastInsertID:    0,   //int64
+			lastInsertErr:   nil, //error
+			rowsAffected:    0,   //int64
+			rowsAffectedErr: nil, //error
+			row:             nil, //*sql.Row
+			rows:            nil, //*sql.Rows
+		}
 	}
-
-	return newExecuteResult(nil, nil, rst, nil)
+	lastID, lastErr := rst.LastInsertId()
+	affected, affErr := rst.RowsAffected()
+	return ExecuteResult{
+		execError:       nil,      // error
+		lastInsertID:    lastID,   //int64
+		lastInsertErr:   lastErr,  //error
+		rowsAffected:    affected, //int64
+		rowsAffectedErr: affErr,   //error
+		row:             nil,      //*sql.Row
+		rows:            nil,      //*sql.Rows
+	}
 }
 func (impl *simpleDBConnImple) DeleteRecords(table string, where clause.WhereClause) ExecuteResult {
 	whereExp := syntaxutil.TernaryOperate(where == nil, "", func() interface{} { return where.WhereSQL() }).(string)
@@ -68,10 +111,28 @@ func (impl *simpleDBConnImple) DeleteRecords(table string, where clause.WhereCla
 	deleteSQL := fmt.Sprintf("DELETE FROM %s %s", table, whereExp)
 	rst, err := impl.conn.Exec(deleteSQL)
 	if err != nil {
-		return newExecuteResult(nil, nil, nil, err)
+		return ExecuteResult{
+			execError:       err, // error
+			lastInsertID:    0,   //int64
+			lastInsertErr:   nil, //error
+			rowsAffected:    0,   //int64
+			rowsAffectedErr: nil, //error
+			row:             nil, //*sql.Row
+			rows:            nil, //*sql.Rows
+		}
 	}
 
-	return newExecuteResult(nil, nil, rst, nil)
+	lastID, lastErr := rst.LastInsertId()
+	affected, affErr := rst.RowsAffected()
+	return ExecuteResult{
+		execError:       nil,      // error
+		lastInsertID:    lastID,   //int64
+		lastInsertErr:   lastErr,  //error
+		rowsAffected:    affected, //int64
+		rowsAffectedErr: affErr,   //error
+		row:             nil,      //*sql.Row
+		rows:            nil,      //*sql.Rows
+	}
 }
 func (impl *simpleDBConnImple) UpdateRecords(mapping StructToRecordMapping, data interface{}, where clause.WhereClause) ExecuteResult {
 
@@ -88,10 +149,28 @@ func (impl *simpleDBConnImple) UpdateRecords(mapping StructToRecordMapping, data
 	sql := fmt.Sprintf("UPDATE %s SET %s %s", mapping.DataSourceMapped(), strings.Join(updates, ","), whereExp)
 	rst, err := impl.conn.Exec(sql)
 	if err != nil {
-		return newExecuteResult(nil, nil, nil, err)
+		return ExecuteResult{
+			execError:       err, // error
+			lastInsertID:    0,   //int64
+			lastInsertErr:   nil, //error
+			rowsAffected:    0,   //int64
+			rowsAffectedErr: nil, //error
+			row:             nil, //*sql.Row
+			rows:            nil, //*sql.Rows
+		}
 	}
 
-	return newExecuteResult(nil, nil, rst, nil)
+	lastID, lastErr := rst.LastInsertId()
+	affected, affErr := rst.RowsAffected()
+	return ExecuteResult{
+		execError:       nil,      // error
+		lastInsertID:    lastID,   //int64
+		lastInsertErr:   lastErr,  //error
+		rowsAffected:    affected, //int64
+		rowsAffectedErr: affErr,   //error
+		row:             nil,      //*sql.Row
+		rows:            nil,      //*sql.Rows
+	}
 }
 
 func (impl *simpleDBConnImple) QueryMultirecord(mapping RecordToStructMapping) ExecuteResult {
@@ -103,12 +182,29 @@ func (impl *simpleDBConnImple) QueryMultirecord(mapping RecordToStructMapping) E
 	selectSQL := fmt.Sprintf("SELECT %s FROM %s %s %s %s %s",
 		strings.Join(mapping.FieldsMapped(), ","), mapping.DataSourceMapped(),
 		whereExp, groupExp, orderExp, offsetLimitExp)
+	fmt.Printf("sql : %s \n", selectSQL)
 	rows, err := impl.conn.Query(selectSQL)
 	if err != nil {
-		return newExecuteResult(nil, nil, nil, err)
+		return ExecuteResult{
+			execError:       err, // error
+			lastInsertID:    0,   //int64
+			lastInsertErr:   nil, //error
+			rowsAffected:    0,   //int64
+			rowsAffectedErr: nil, //error
+			row:             nil, //*sql.Row
+			rows:            nil, //*sql.Rows
+		}
 	}
 
-	return newExecuteResult(nil, rows, nil, nil)
+	return ExecuteResult{
+		execError:       nil,  // error
+		lastInsertID:    0,    //int64
+		lastInsertErr:   nil,  //error
+		rowsAffected:    0,    //int64
+		rowsAffectedErr: nil,  //error
+		row:             nil,  //*sql.Row
+		rows:            rows, //*sql.Rows
+	}
 }
 func (impl *simpleDBConnImple) QueryOneRecord(mapping RecordToStructMapping) ExecuteResult {
 	whereExp := syntaxutil.TernaryOperate(mapping.WhereClause == nil, "", func() interface{} { return mapping.WhereClause.WhereSQL() })
@@ -117,7 +213,15 @@ func (impl *simpleDBConnImple) QueryOneRecord(mapping RecordToStructMapping) Exe
 		strings.Join(mapping.FieldsMapped(), ","), mapping.DataSourceMapped(), whereExp, groupExp)
 	row := impl.conn.QueryRow(selectSQL)
 
-	return newExecuteResult(row, nil, nil, nil)
+	return ExecuteResult{
+		execError:       nil, // error
+		lastInsertID:    0,   //int64
+		lastInsertErr:   nil, //error
+		rowsAffected:    0,   //int64
+		rowsAffectedErr: nil, //error
+		row:             row, //*sql.Row
+		rows:            nil, //*sql.Rows
+	}
 }
 
 //MultitableJoinpointer 多表联接
@@ -133,7 +237,15 @@ func (jp *MultitableJoinpointer) String() string {
 
 func (impl *simpleDBConnImple) QueryMultitable(selects []string, mainTable, where string, parameters []interface{}, pointers []*MultitableJoinpointer) ExecuteResult {
 	if len(selects) == 0 {
-		return newExecuteResult(nil, nil, nil, errors.ERR_QUERY_SELECT_CANOT_BE_BLANK)
+		return ExecuteResult{
+			execError:       errors.ERR_QUERY_SELECT_CANOT_BE_BLANK, // error
+			lastInsertID:    0,                                      //int64
+			lastInsertErr:   nil,                                    //error
+			rowsAffected:    0,                                      //int64
+			rowsAffectedErr: nil,                                    //error
+			row:             nil,                                    //*sql.Row
+			rows:            nil,                                    //*sql.Rows
+		}
 	}
 
 	joinTables := make([]string, len(pointers))
@@ -149,9 +261,25 @@ func (impl *simpleDBConnImple) QueryMultitable(selects []string, mainTable, wher
 	sql := fmt.Sprintf("SELECT %s FROM %s %s  WHERE %s", strings.Join(selects, ","), mainTable, strings.Join(joinTables, " "), where)
 	rows, err := impl.conn.Query(sql)
 	if err != nil {
-		return newExecuteResult(nil, nil, nil, err)
+		return ExecuteResult{
+			execError:       err, // error
+			lastInsertID:    0,   //int64
+			lastInsertErr:   nil, //error
+			rowsAffected:    0,   //int64
+			rowsAffectedErr: nil, //error
+			row:             nil, //*sql.Row
+			rows:            nil, //*sql.Rows
+		}
 	}
-	return newExecuteResult(nil, rows, nil, nil)
+	return ExecuteResult{
+		execError:       nil,  // error
+		lastInsertID:    0,    //int64
+		lastInsertErr:   nil,  //error
+		rowsAffected:    0,    //int64
+		rowsAffectedErr: nil,  //error
+		row:             nil,  //*sql.Row
+		rows:            rows, //*sql.Rows
+	}
 }
 
 // ConnectionProperties 链接属性

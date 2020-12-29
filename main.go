@@ -10,7 +10,8 @@ import (
 	"dm.net/datamine/common/log"
 	"dm.net/datamine/kernel/schedule"
 	"dm.net/datamine/kernel/types"
-	// "dm.net/datamine/alg/wave"
+	"dm.net/datamine/visualization/dao"
+	"dm.net/datamine/visualization/resource"
 	// "dm.net/datamine/kernel"
 	// "dm.net/datamine/kernel/schedule"
 	// "dm.net/datamine/kernel/types"
@@ -48,13 +49,16 @@ func main() {
 		log.NewStdoutAppender())
 	logger.Error("saafsadfasfsafd")
 
-	// resource.InitDBConnection()
-	// dao.LoadAccounts()
+	resource.InitDBConnection()
+	dao.LoadAccounts()
 	// visualization.AppLaunch()
 
-	var accounts []interface{}
-	simulatORM(nil, &accounts)
-	logger.Debug("findFields %v", accounts)
+	// var s = "sdfasfsaf"
+	// strType := reflect.TypeOf(s)
+	// newStrPtr := reflect.New(strType)
+	// newStrPtr.Elem().Set(reflect.ValueOf(s))
+
+	// logger.Debug("findFields %v", newStrPtr.Elem().Interface())
 	select {}
 }
 
