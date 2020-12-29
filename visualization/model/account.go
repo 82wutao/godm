@@ -1,10 +1,9 @@
 package model
 
-import (
-	"time"
-)
+import "time"
 
 type Account struct {
+	test                  int
 	ID                    int64      `gorm:"primaryKey"`
 	AccountID             int64      `json:"account_id,omitempty" gorm:"column:account_id;type:bigint;"`
 	AppID                 *int64     `json:"app_id,omitempty" gorm:"column:app_id;type:bigint;default:null"` //

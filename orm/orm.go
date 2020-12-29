@@ -1,6 +1,8 @@
 package orm
 
-import "dm.net/datamine/orm/clause"
+import (
+	"dm.net/datamine/orm/clause"
+)
 
 //StructToRecordMapping 可以被记录的对象 ,用在create 和 update
 type StructToRecordMapping struct {

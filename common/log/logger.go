@@ -29,7 +29,7 @@ type simpleLogger struct {
 }
 
 func layout(layouts []LayoutElement, lvl LogLevel, msg string) ([]byte, time.Time) {
-	buffer := make([]string, len(layouts))
+	buffer := make([]string, len(layouts)+1)
 
 	timestamp := time.Now().UTC()
 	var (
@@ -67,6 +67,7 @@ func layout(layouts []LayoutElement, lvl LogLevel, msg string) ([]byte, time.Tim
 			buffer[i] = "thread"
 		}
 	}
+	buffer[len(layouts)] = "\n"
 	return []byte(strings.Join(buffer, " ")), time.Now()
 }
 
@@ -122,7 +123,7 @@ func (l *simpleLogger) Fatal(format string, args ...interface{}) {
 	l.queue <- log
 }
 func (l *simpleLogger) Enable(lvl LogLevel) bool {
-	return l.level < lvl
+	return l.level <= lvl
 }
 
 func (l *simpleLogger) outputLog() {

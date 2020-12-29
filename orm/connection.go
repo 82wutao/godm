@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	_ "github.com/lib/pq"
-
 	"dm.net/datamine/orm/clause"
 	"dm.net/datamine/orm/errors"
 	"dm.net/datamine/orm/util"

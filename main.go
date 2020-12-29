@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	coll_list "container/list"
@@ -9,9 +10,6 @@ import (
 	"dm.net/datamine/common/log"
 	"dm.net/datamine/kernel/schedule"
 	"dm.net/datamine/kernel/types"
-	"dm.net/datamine/visualization"
-	"dm.net/datamine/visualization/dao"
-	"dm.net/datamine/visualization/resource"
 	// "dm.net/datamine/alg/wave"
 	// "dm.net/datamine/kernel"
 	// "dm.net/datamine/kernel/schedule"
@@ -48,11 +46,26 @@ func main() {
 	logger := log.NewLogger(false, log.DebugLevel,
 		[]log.LayoutElement{log.LEVEL, log.DATATIME, log.FILE, log.FUNC, log.LINE, log.MESSAGE},
 		log.NewStdoutAppender())
-
-	resource.InitDBConnection()
-	dao.LoadAccounts()
 	logger.Error("saafsadfasfsafd")
-	visualization.AppLaunch()
+
+	// resource.InitDBConnection()
+	// dao.LoadAccounts()
+	// visualization.AppLaunch()
+
+	var accounts []interface{}
+	simulatORM(nil, &accounts)
+	logger.Debug("findFields %v", accounts)
+	select {}
+}
+
+func simulatORM(nonnil interface{}, nilp *[]interface{}) {
+	ptrValue := reflect.ValueOf(nilp)
+	// ptrValue.SetPointer()
+	// reflect.AppendSlice()
+	sliceValue := ptrValue.Elem()
+
+	n := reflect.Append(sliceValue, reflect.ValueOf(1))
+	sliceValue.Set(n)
 }
 
 // qps

@@ -13,8 +13,7 @@ type ExecuteResult interface {
 		mapSupple func() map[string]interface{},
 		mapFunc func(rcver []interface{}, dest map[string]interface{})) ([]map[string]interface{}, error)
 	MapRecords2Struct(rcverSupple func() []interface{},
-		structSupple func() interface{},
-		mapFunc func(rcver []interface{}, dest interface{})) ([]interface{}, error)
+		mapFunc func(rcver []interface{}) interface{}) ([]interface{}, error)
 	MapOneField(oneDest interface{}) error
 	MapMultifield(multidest []interface{}) error
 
@@ -80,17 +79,41 @@ func (imple *simpleExecuteResultImple) MapRecords2Map(rcverSupple func() []inter
 	return ret, nil
 }
 func (imple *simpleExecuteResultImple) MapRecords2Struct(rcverSupple func() []interface{},
-	structSupple func() interface{},
-	mapFunc func(record []interface{}, dest interface{})) ([]interface{}, error) {
+	mapFunc func(rcver []interface{}) interface{}) ([]interface{}, error) {
+
+	rcver := rcverSupple()
+	rcverPtr := make([]interface{}, len(rcver))
 
 	ret := make([]interface{}, 0)
-	if err := readMultirecord(imple.rows, rcverSupple(), func(record []interface{}) {
-		dest := structSupple()
 
-		mapFunc(record, dest)
-		ret = append(ret, dest)
-	}); err != nil {
-		return nil, err
+	for next := true; next; next = imple.rows.NextResultSet() {
+		for more := imple.rows.Next(); more; more = imple.rows.Next() {
+			if err := imple.rows.Scan(rcverPtr...); err != nil {
+				return nil, err
+			}
+			dest := mapFunc(rcver)
+			ret = append(ret, dest)
+		}
+	}
+
+	return ret, nil
+}
+func (imple *simpleExecuteResultImple) MapRecords2Struct2(rcverSupple func() []interface{},
+	mapFunc func(rcver []interface{}) interface{}) ([]interface{}, error) {
+
+	rcver := rcverSupple()
+	rcverPtr := make([]interface{}, len(rcver))
+	// settjing rcver 's ptr
+	ret := make([]interface{}, 0)
+
+	for next := true; next; next = imple.rows.NextResultSet() {
+		for more := imple.rows.Next(); more; more = imple.rows.Next() {
+			if err := imple.rows.Scan(rcverPtr...); err != nil {
+				return nil, err
+			}
+			dest := mapFunc(rcver)
+			ret = append(ret, dest)
+		}
 	}
 
 	return ret, nil
