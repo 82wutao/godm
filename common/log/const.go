@@ -1,7 +1,9 @@
 package log
 
+// LogLevel 日志级别
 type LogLevel int
 
+//  日志级别 枚举
 const (
 	_ LogLevel = iota
 	DebugLevel
@@ -11,6 +13,7 @@ const (
 	FatalLevel
 )
 
+// String 日志级别string
 func (l LogLevel) String() string {
 	switch l {
 	case DebugLevel:
@@ -27,14 +30,16 @@ func (l LogLevel) String() string {
 	return ""
 }
 
+// LayoutElement 日志组成元素
 type LayoutElement int
 
+// 日志组成元素 元素种类枚举
 const (
 	_ LayoutElement = iota
 	LEVEL
 	PROCESS
 	DATATIME
-	THREAD
+	//THREAD
 	FILE
 	FUNC
 	LINE

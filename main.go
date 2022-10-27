@@ -10,8 +10,7 @@ import (
 	"dm.net/datamine/common/log"
 	"dm.net/datamine/kernel/schedule"
 	"dm.net/datamine/kernel/types"
-	"dm.net/datamine/visualization/dao"
-	"dm.net/datamine/visualization/resource"
+	"dm.net/datamine/visualization"
 	// "dm.net/datamine/kernel"
 	// "dm.net/datamine/kernel/schedule"
 	// "dm.net/datamine/kernel/types"
@@ -47,18 +46,9 @@ func main() {
 	logger := log.NewLogger(false, log.DebugLevel,
 		[]log.LayoutElement{log.LEVEL, log.DATATIME, log.FILE, log.FUNC, log.LINE, log.MESSAGE},
 		log.NewStdoutAppender())
-	logger.Error("saafsadfasfsafd")
+	logger.Error("start visuallization server")
 
-	resource.InitDBConnection()
-	dao.LoadAccounts()
-	// visualization.AppLaunch()
-
-	// var s = "sdfasfsaf"
-	// strType := reflect.TypeOf(s)
-	// newStrPtr := reflect.New(strType)
-	// newStrPtr.Elem().Set(reflect.ValueOf(s))
-
-	// logger.Debug("findFields %v", newStrPtr.Elem().Interface())
+	visualization.AppLaunch()
 	select {}
 }
 

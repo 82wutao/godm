@@ -63,8 +63,8 @@ func layout(layouts []LayoutElement, lvl LogLevel, msg string) ([]byte, time.Tim
 			buffer[i] = strconv.Itoa(line)
 		case MESSAGE:
 			buffer[i] = msg
-		case THREAD:
-			buffer[i] = "thread"
+			// case THREAD:
+			// 	buffer[i] = "thread"
 		}
 	}
 	buffer[len(layouts)] = "\n"
@@ -157,6 +157,61 @@ func NewLogger(async bool, lvl LogLevel, layout []LayoutElement, appenders ...Ap
 		level:     lvl,
 		layouts:   layout,
 		appenders: appenders,
+	}
+	go logger.outputLog()
+
+	return logger
+}
+
+//NewStdoutLogger new a appender that flush data to stdout
+func NewStdoutLogger(lvl LogLevel, layout []LayoutElement) Logger {
+	append := &consoleAppender{descripter: os.Stdout}
+
+	logger := &simpleLogger{
+		queue: make(chan []byte),
+
+		async:     true,
+		level:     lvl,
+		layouts:   layout,
+		appenders: []Appender{append},
+	}
+	go logger.outputLog()
+
+	return logger
+}
+
+//NewStderrLogger new a appender that flush data to stderr
+func NewStderrLogger(lvl LogLevel, layout []LayoutElement) Logger {
+	append := &consoleAppender{descripter: os.Stderr}
+
+	logger := &simpleLogger{
+		queue: make(chan []byte),
+
+		async:     true,
+		level:     lvl,
+		layouts:   layout,
+		appenders: []Appender{append},
+	}
+	go logger.outputLog()
+
+	return logger
+}
+
+//NewFileLogger new a appender that flush data to file system
+func NewFileLogger(lvl LogLevel, layout []LayoutElement, filePath string) Logger {
+	roll := &RollConfig{
+		LifeCycle:       time.Hour * 24,
+		DateTimePattern: "20160102150405",
+	}
+	append := &fileAppender{logfile: filePath, roll: roll}
+
+	logger := &simpleLogger{
+		queue: make(chan []byte),
+
+		async:     true,
+		level:     lvl,
+		layouts:   layout,
+		appenders: []Appender{append},
 	}
 	go logger.outputLog()
 

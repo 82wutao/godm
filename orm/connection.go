@@ -195,6 +195,7 @@ func (impl *simpleDBConnImple) QueryMultirecord(mapping RecordToStructMapping) E
 			rows:            nil, //*sql.Rows
 		}
 	}
+	rows.m
 
 	return ExecuteResult{
 		execError:       nil,  // error

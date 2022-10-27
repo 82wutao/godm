@@ -5,15 +5,17 @@ import (
 	"os"
 )
 
-// appender sint
+// Appender 日志内容输出接口
 type Appender interface {
 	Flush(bytes []byte)
 }
 
+// consoleAppender 日志内容输出接口的控制台实现
 type consoleAppender struct {
 	descripter io.Writer
 }
 
+// Flush 日志内容输出接口的控制台实现
 func (console *consoleAppender) Flush(buffer []byte) {
 	offset := 0
 	length := len(buffer)
@@ -24,12 +26,14 @@ func (console *consoleAppender) Flush(buffer []byte) {
 
 }
 
+// fileAppender 日志内容输出接口的文件实现
 type fileAppender struct {
 	descripter io.WriteCloser
 	logfile    string
 	roll       *RollConfig
 }
 
+// Flush 日志内容输出接口的文件实现
 func (file *fileAppender) Flush(buffer []byte) {
 	offset := 0
 	length := len(buffer)
