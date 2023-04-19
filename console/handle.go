@@ -3,10 +3,12 @@ package console
 import (
 	"fmt"
 	"os"
+
+	"dm.net/datamine/common"
 )
 
 // Alg is alg of handle data
-type Alg func(interface{}) interface{}
+type Alg common.Func[interface{}, interface{}]
 
 func parseAlg(filePath string) Alg {
 	return nil

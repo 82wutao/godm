@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"dm.net/datamine/common"
 	"dm.net/datamine/orm/clause"
 )
 
@@ -8,7 +9,7 @@ import (
 type StructToRecordMapping struct {
 	FieldsMapped       clause.TargetFields
 	DataSourceMapped   clause.TargetDataSource
-	MapsStructToValues func(strct interface{}) []interface{}
+	MapsStructToValues common.Func[common.T, []common.R]
 }
 
 type RecordToStructMapping struct {

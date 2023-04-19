@@ -30,7 +30,7 @@ func (tps *TPSChain) OnStarted(raw *types.DataPresenting) (t *types.Trace) {
 	procID := fmt.Sprintf("%s_%d", raw.Name, start.UnixNano())
 	ele := tps.reduceQueue.PushBack(&tpsEndpoint{start: start, finished: false})
 
-	return &types.Trace{procID, ele}
+	return &types.Trace{ID: procID, ReduceNode: ele}
 }
 func (tps *TPSChain) Subprocesses() int {
 	return len(tps.processes)

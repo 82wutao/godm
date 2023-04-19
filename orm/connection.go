@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"dm.net/datamine/common"
 	"dm.net/datamine/orm/clause"
 	"dm.net/datamine/orm/errors"
 	"dm.net/datamine/orm/util"
@@ -17,9 +18,9 @@ type DatabaseConnection interface {
 
 	ExecuteCMD(sql string) ExecuteResult
 
-	CreateRecords(mapping StructToRecordMapping, structs []interface{}) ExecuteResult
+	CreateRecords(mapping StructToRecordMapping, structs []T) ExecuteResult
 	DeleteRecords(table string, where clause.WhereClause) ExecuteResult
-	UpdateRecords(mapping StructToRecordMapping, data interface{}, where clause.WhereClause) ExecuteResult
+	UpdateRecords(mapping StructToRecordMapping, data T, where clause.WhereClause) ExecuteResult
 	QueryMultirecord(mapping RecordToStructMapping) ExecuteResult
 	QueryOneRecord(mapping RecordToStructMapping) ExecuteResult
 }
@@ -58,7 +59,8 @@ func (impl *simpleDBConnImple) ExecuteCMD(sql string) ExecuteResult {
 	}
 }
 
-func (impl *simpleDBConnImple) CreateRecords(mapping StructToRecordMapping, structs []interface{}) ExecuteResult {
+func (impl *simpleDBConnImple) CreateRecords(mapping StructToRecordMapping,
+	structs []T) ExecuteResult {
 
 	if len(structs) == 0 {
 		return ExecuteResult{
@@ -133,6 +135,9 @@ func (impl *simpleDBConnImple) DeleteRecords(table string, where clause.WhereCla
 		row:             nil,      //*sql.Row
 		rows:            nil,      //*sql.Rows
 	}
+}
+func (impl *simpleDBConnImple) UpdateRecords123[S interface{}](abc S) ExecuteResult {
+
 }
 func (impl *simpleDBConnImple) UpdateRecords(mapping StructToRecordMapping, data interface{}, where clause.WhereClause) ExecuteResult {
 

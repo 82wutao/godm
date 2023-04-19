@@ -10,13 +10,15 @@ import (
 func AppLaunch() {
 
 	app := web.NewEchoAppWith([]echo.MiddlewareFunc{middleware.Logger()},
-		[]*web.MapableHandlerFunc{&web.MapableHandlerFunc{
-			Path:        "/about",
-			MethodConst: echo.GET,
-			Middlewares: nil,
+		[]*web.MapableHandlerFunc{
+			{
+				Path:        "/about",
+				MethodConst: echo.GET,
+				Middlewares: nil,
 
-			HandleFunc: restful.About,
-		}})
+				HandleFunc: restful.About,
+			},
+		})
 
 	app.Static("/html", "visualization/view/html")
 	app.Static("/img", "visualization/view/static/image")

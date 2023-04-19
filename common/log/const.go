@@ -13,21 +13,17 @@ const (
 	FatalLevel
 )
 
+var _lvl_mapping map[LogLevel]string = map[LogLevel]string{
+	DebugLevel: "DEBUG",
+	InfoLevel:  "INFO",
+	WarnLevel:  "WARN",
+	ErrorLevel: "ERROR",
+	FatalLevel: "FATAL",
+}
+
 // String 日志级别string
 func (l LogLevel) String() string {
-	switch l {
-	case DebugLevel:
-		return "DEBUG"
-	case InfoLevel:
-		return "INFO"
-	case WarnLevel:
-		return "WARN"
-	case ErrorLevel:
-		return "ERROR"
-	case FatalLevel:
-		return "FATAL"
-	}
-	return ""
+	return _lvl_mapping[l]
 }
 
 // LayoutElement 日志组成元素

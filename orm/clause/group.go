@@ -9,14 +9,14 @@ import (
 type GroupClause interface {
 	GroupSQL() string
 }
-type simpleGroupClauseImpl struct {
+type simpleGroupClauseImpl[T interface{}] struct {
 	columns    []string
-	conditions []*ConditionExp
-	joins      ConditionsJoins
+	conditions []*ConditionExp[T]
+	joins      ConditionsJoins[T]
 }
 
 //Express 分组子句的sql表达
-func (group *simpleGroupClauseImpl) GroupSQL() string {
+func (group *simpleGroupClauseImpl[T]) GroupSQL() string {
 
 	clmns := strings.Join(group.columns, ",")
 	groupSQL := fmt.Sprintf("GROUP BY %s", clmns)
@@ -26,7 +26,7 @@ func (group *simpleGroupClauseImpl) GroupSQL() string {
 
 	joins := group.joins
 	if joins == nil {
-		joins = func(multicondition ...*ConditionExp) *ConditionExp {
+		joins = func(multicondition ...*ConditionExp[T]) *ConditionExp[T] {
 			return multicondition[0]
 		}
 	}
@@ -34,6 +34,7 @@ func (group *simpleGroupClauseImpl) GroupSQL() string {
 }
 
 //NewGroupClause group子句
-func NewGroupClause(columns []string, havings []*ConditionExp, joins ConditionsJoins) GroupClause {
-	return &simpleGroupClauseImpl{columns: columns, conditions: havings, joins: joins}
+func NewGroupClause[T interface{}](columns []string,
+	havings []*ConditionExp[T], joins ConditionsJoins[T]) GroupClause {
+	return &simpleGroupClauseImpl[T]{columns: columns, conditions: havings, joins: joins}
 }

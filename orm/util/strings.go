@@ -10,10 +10,10 @@ import (
 )
 
 // StringValue 将一个对象字符串化
-func StringValue(val interface{}) string {
-	if val == nil {
-		return "NULL"
-	}
+func StringValue[T interface{}](val T) string {
+	// TODO if val == nil {
+	// 	return "NULL"
+	// }
 	reflector := func(v interface{}, vt reflect.Type, vk reflect.Kind, vv reflect.Value) string {
 		switch vk {
 		case reflect.String:
@@ -80,7 +80,7 @@ func StringValue(val interface{}) string {
 }
 
 // StringValues 将一个对象切片字符串化
-func StringValues(values []interface{}) string {
+func StringValues[T interface{}](values []T) string {
 	length := len(values)
 	results := make([]string, length)
 	for i, v := range values {
